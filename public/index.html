@@ -659,7 +659,7 @@
             };
         }
         
-        // 메인 검증 함수
+        // ✅ 수정된 메인 검증 함수 (API 호출 부분)
         async function verifyCitations() {
             const citationsText = document.getElementById('citations').value.trim();
             const resultsDiv = document.getElementById('results');
@@ -693,34 +693,51 @@
             resultsDiv.innerHTML = '<div class="loading">학술 데이터베이스에서 검색 중입니다</div>';
             
             try {
-                // 실제 API 호출
-                const response = await fetch('/api/verify-citations', {
-                    method: 'POST',
+                // ✅ 수정된 API 호출 부분 - 헬스체크 먼저 시도
+                const healthResponse = await fetch('/api/health', { 
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        citations: citations
-                    })
+                        'Accept': 'application/json'
+                    }
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`서버 오류: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    verificationResults = data.results;
-                    displayResults();
+                if (healthResponse.ok) {
+                    // API 서버가 살아있으면 실제 검증 API 호출
+                    const response = await fetch('/api/verify-citations', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            citations: citations
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            verificationResults = data.results.map(result => ({
+                                citation: result.citation,
+                                verification: result
+                            }));
+                            displayResults();
+                            return;
+                        } else {
+                            throw new Error(data.error || '검증 API 오류');
+                        }
+                    } else {
+                        throw new Error(`API 응답 오류: ${response.status}`);
+                    }
                 } else {
-                    throw new Error(data.error || '알 수 없는 오류가 발생했습니다.');
+                    throw new Error('API 서버에 연결할 수 없습니다');
                 }
                 
             } catch (error) {
-                console.error('검증 오류:', error);
+                console.log('API 연결 실패, 시뮬레이션 모드로 전환:', error);
                 
-                // 에러 발생시 시뮬레이션 모드로 대체
+                // API 실패시 시뮬레이션 모드로 자동 전환
                 await simulateVerification(citations, resultsDiv);
             } finally {
                 // 로딩 상태 해제
@@ -737,7 +754,7 @@
             resultsDiv.innerHTML = `
                 <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #92400e;">
                     ⚠️ <strong>시뮬레이션 모드</strong><br>
-                    실제 API 연결에 실패하여 데모 결과를 표시합니다.
+                    API 서버에 연결할 수 없어 데모 결과를 표시합니다.
                 </div>
                 <div class="loading">검증 중입니다</div>
             `;
@@ -751,7 +768,7 @@
                 // 진행상황 표시
                 resultsDiv.innerHTML = `
                     <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #92400e;">
-                        ⚠️ <strong>시뮬레이션 모드</strong> - 실제 API 연결 실패
+                        ⚠️ <strong>시뮬레이션 모드</strong> - API 서버 연결 실패
                     </div>
                     <div class="loading">검증 중입니다 (${i + 1}/${citations.length})</div>
                 `;
@@ -809,3 +826,134 @@
             } else if (similarity > 0.4) {
                 return {
                     status: 'similar',
+                    message: isEnglish ?
+                        'Similar publications found, but not exact match' :
+                        '유사한 문헌이 발견되었지만 정확한 일치는 아닙니다',
+                    confidence: Math.round(similarity * 100),
+                    databases: isEnglish ? ['arXiv'] : ['KCI']
+                };
+            } else {
+                return {
+                    status: 'not-found',
+                    message: isEnglish ?
+                        'Not found in academic databases. Possible AI hallucination.' :
+                        'KCI 데이터베이스에서 찾을 수 없습니다. AI 할루시네이션 의심',
+                    confidence: Math.round((1 - similarity) * 100)
+                };
+            }
+        }
+        
+        // 결과 표시 함수
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (verificationResults.length === 0) {
+                resultsDiv.innerHTML = '<p style="color: #64748b; text-align: center; padding: 40px;">검증할 문헌이 없습니다.</p>';
+                return;
+            }
+            
+            let html = '';
+            let verifiedCount = 0;
+            let suspiciousCount = 0;
+            
+            verificationResults.forEach((result, index) => {
+                const { citation, verification } = result;
+                let statusClass = '';
+                let statusText = '';
+                
+                switch (verification.status) {
+                    case 'verified':
+                        statusClass = 'verified';
+                        statusText = '검증됨';
+                        verifiedCount++;
+                        break;
+                    case 'similar':
+                        statusClass = 'similar';
+                        statusText = '유사문헌';
+                        break;
+                    case 'not-found':
+                        statusClass = 'not-found';
+                        statusText = '의심됨';
+                        suspiciousCount++;
+                        break;
+                    default:
+                        statusClass = 'error';
+                        statusText = '오류';
+                }
+                
+                html += `
+                    <div class="result-item">
+                        <div class="citation-title">
+                            <span class="status ${statusClass}">${statusText}</span>
+                            ${citation.title || citation.original}
+                            <span class="language-tag ${citation.language}">${citation.language === 'english' ? 'ENG' : 'KOR'}</span>
+                        </div>
+                        <div class="citation-details">
+                            <strong>원본:</strong> ${citation.original}<br>
+                            <strong>검증 결과:</strong> ${verification.message}
+                            ${verification.confidence ? `<br><strong>신뢰도:</strong> ${verification.confidence}%` : ''}
+                            ${verification.databases ? `<br><strong>검색 DB:</strong> ${verification.databases.join(', ')}` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // 요약 정보 추가
+            const summary = `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                    <h3 style="color: #1e40af; margin-bottom: 16px; font-weight: 600;">🔍 검증 요약</h3>
+                    <p><strong>총 문헌 수:</strong> ${verificationResults.length}개</p>
+                    <p><strong>한국어 문헌:</strong> ${verificationResults.filter(r => r.citation.language === 'korean').length}개</p>
+                    <p><strong>영어 문헌:</strong> ${verificationResults.filter(r => r.citation.language === 'english').length}개</p>
+                    <p><strong>검증된 문헌:</strong> ${verifiedCount}개</p>
+                    <p><strong>의심되는 문헌:</strong> ${suspiciousCount}개</p>
+                    ${suspiciousCount > 0 ? 
+                        `<p style="color: #dc2626; font-weight: 600; margin-top: 12px;">
+                            ⚠️ AI 할루시네이션 의심 문헌이 발견되었습니다.
+                        </p>` : 
+                        `<p style="color: #059669; font-weight: 600; margin-top: 12px;">
+                            ✅ 모든 문헌이 검증되었습니다.
+                        </p>`
+                    }
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = summary + html;
+        }
+        
+        // 초기화 함수
+        function clearAll() {
+            document.getElementById('citations').value = '';
+            document.getElementById('results').innerHTML = `
+                <p style="color: #64748b; text-align: center; padding: 40px;">
+                    참고문헌을 입력하고 검증 버튼을 클릭하세요.
+                </p>
+            `;
+            verificationResults = [];
+            updateCitationCounter();
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 예시 데이터로 테스트할 수 있도록 버튼 추가
+            const exampleBtn = document.createElement('button');
+            exampleBtn.textContent = '예시 데이터로 테스트';
+            exampleBtn.className = 'btn btn-secondary';
+            exampleBtn.style.marginTop = '16px';
+            exampleBtn.style.width = '100%';
+            exampleBtn.style.fontSize = '14px';
+            exampleBtn.onclick = function() {
+                document.getElementById('citations').value = `김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.
+Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67.
+이영희 (2022). 디지털 네이티브 세대의 학습패턴 분석. 한국교육심리학회지, 36(3), 67-89.
+Brown, A. (2022). AI hallucination detection. Nature Machine Intelligence. DOI: 10.1038/s41467-022-12345-6
+박민수 (2023). 가상현실 환경에서의 몰입형 학습 효과. 존재하지않는학회지, 99(1), 1-20.
+Johnson, M. (2021). Fake paper about blockchain education. Non-existent Journal, 1(1), 1-10.`;
+                updateCitationCounter();
+            };
+            
+            document.querySelector('.example-citations').appendChild(exampleBtn);
+        });
+    </script>
+</body>
+</html>
