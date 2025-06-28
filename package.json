@@ -1,8 +1,8 @@
-json{
+{
   "name": "nohallu-vercel",
   "version": "1.0.0",
   "description": "AI hallucination detection for academic citations",
-  "main": "api/verify-citations.js",
+  "main": "index.html",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'Static build'",
@@ -13,5 +13,14 @@ json{
   },
   "engines": {
     "node": "18.x"
-  }
+  },
+  "keywords": [
+    "education",
+    "ai",
+    "hallucination",
+    "citation",
+    "verification"
+  ],
+  "author": "NoHallu Team",
+  "license": "MIT"
 }
