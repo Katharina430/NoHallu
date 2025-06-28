@@ -548,8 +548,11 @@
                 <div class="input-group">
                     <label for="citations">참고문헌 또는 인용문 입력:</label>
                     <textarea id="citations" 
+                              name="citations"
                               placeholder="학생이 제출한 참고문헌을 여기에 붙여넣으세요. (최대 5개)&#10;&#10;한국어 예시:&#10;김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.&#10;&#10;English Example:&#10;Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67."
-                              oninput="updateCitationCounter()"></textarea>
+                              oninput="updateCitationCounter()"
+                              onclick="this.focus()"
+                              style="cursor: text;"></textarea>
                 </div>
                 
                 <div class="btn-group">
@@ -614,32 +617,41 @@
         let verificationResults = [];
         let isVerifying = false;
         
-        // 문헌 개수 카운터 업데이트
+        // 문헌 개수 카운터 업데이트 (안전한 버전)
         function updateCitationCounter() {
-            const citationsText = document.getElementById('citations').value.trim();
-            const citations = citationsText ? citationsText.split(/\n+/)
-                .map(c => c.trim())
-                .filter(c => c.length > 10) : [];
-            
-            const counter = document.getElementById('citationCounter');
-            const textarea = document.getElementById('citations');
-            const verifyBtn = document.getElementById('verifyBtn');
-            
-            const count = citations.length;
-            counter.textContent = `입력된 문헌: ${count}개 / 5개`;
-            
-            // 5개 초과시 스타일 변경
-            if (count > 5) {
-                counter.style.background = '#fef2f2';
-                counter.style.color = '#dc2626';
-                textarea.classList.add('textarea-warning');
-                verifyBtn.disabled = true;
-                counter.textContent = `⚠️ 입력된 문헌: ${count}개 (5개 초과!)`;
-            } else {
-                counter.style.background = '#dbeafe';
-                counter.style.color = '#1e40af';
-                textarea.classList.remove('textarea-warning');
-                verifyBtn.disabled = isVerifying;
+            try {
+                const citationsElement = document.getElementById('citations');
+                const counterElement = document.getElementById('citationCounter');
+                const verifyBtn = document.getElementById('verifyBtn');
+                
+                if (!citationsElement || !counterElement || !verifyBtn) {
+                    console.log('요소를 찾을 수 없습니다');
+                    return;
+                }
+                
+                const citationsText = citationsElement.value.trim();
+                const citations = citationsText ? citationsText.split(/\n+/)
+                    .map(c => c.trim())
+                    .filter(c => c.length > 10) : [];
+                
+                const count = citations.length;
+                counterElement.textContent = `입력된 문헌: ${count}개 / 5개`;
+                
+                // 5개 초과시 스타일 변경
+                if (count > 5) {
+                    counterElement.style.background = '#fef2f2';
+                    counterElement.style.color = '#dc2626';
+                    citationsElement.classList.add('textarea-warning');
+                    verifyBtn.disabled = true;
+                    counterElement.textContent = `⚠️ 입력된 문헌: ${count}개 (5개 초과!)`;
+                } else {
+                    counterElement.style.background = '#dbeafe';
+                    counterElement.style.color = '#1e40af';
+                    citationsElement.classList.remove('textarea-warning');
+                    verifyBtn.disabled = isVerifying;
+                }
+            } catch (error) {
+                console.error('카운터 업데이트 오류:', error);
             }
         }
         
@@ -933,8 +945,27 @@
             updateCitationCounter();
         }
         
-        // 페이지 로드 시 초기화
+        // 페이지 로드 시 초기화 (강화된 버전)
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('NoHallu 페이지 로드 완료');
+            
+            // 초기 카운터 업데이트
+            updateCitationCounter();
+            
+            // textarea 활성화 확인
+            const textarea = document.getElementById('citations');
+            if (textarea) {
+                console.log('Textarea 찾음:', textarea);
+                textarea.addEventListener('focus', function() {
+                    console.log('Textarea 포커스됨');
+                });
+                textarea.addEventListener('input', function() {
+                    console.log('Textarea 입력됨:', this.value.length);
+                });
+            } else {
+                console.error('Textarea를 찾을 수 없습니다!');
+            }
+            
             // 예시 데이터로 테스트할 수 있도록 버튼 추가
             const exampleBtn = document.createElement('button');
             exampleBtn.textContent = '예시 데이터로 테스트';
@@ -943,16 +974,25 @@
             exampleBtn.style.width = '100%';
             exampleBtn.style.fontSize = '14px';
             exampleBtn.onclick = function() {
-                document.getElementById('citations').value = `김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.
+                console.log('예시 데이터 버튼 클릭됨');
+                const citationsTextarea = document.getElementById('citations');
+                if (citationsTextarea) {
+                    citationsTextarea.value = `김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.
 Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67.
 이영희 (2022). 디지털 네이티브 세대의 학습패턴 분석. 한국교육심리학회지, 36(3), 67-89.
 Brown, A. (2022). AI hallucination detection. Nature Machine Intelligence. DOI: 10.1038/s41467-022-12345-6
-박민수 (2023). 가상현실 환경에서의 몰입형 학습 효과. 존재하지않는학회지, 99(1), 1-20.
-Johnson, M. (2021). Fake paper about blockchain education. Non-existent Journal, 1(1), 1-10.`;
-                updateCitationCounter();
+박민수 (2023). 가상현실 환경에서의 몰입형 학습 효과. 존재하지않는학회지, 99(1), 1-20.`;
+                    updateCitationCounter();
+                    console.log('예시 데이터 입력 완료');
+                } else {
+                    console.error('Textarea를 찾을 수 없어서 예시 데이터를 입력할 수 없습니다');
+                }
             };
             
-            document.querySelector('.example-citations').appendChild(exampleBtn);
+            const exampleSection = document.querySelector('.example-citations');
+            if (exampleSection) {
+                exampleSection.appendChild(exampleBtn);
+            }
         });
     </script>
 </body>
