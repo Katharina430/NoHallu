@@ -551,7 +551,8 @@
                               name="citations"
                               placeholder="학생이 제출한 참고문헌을 여기에 붙여넣으세요. (최대 5개)&#10;&#10;한국어 예시:&#10;김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.&#10;&#10;English Example:&#10;Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67."
                               oninput="updateCitationCounter()"
-                              onclick="this.focus()"
+                              onkeyup="updateCitationCounter()"
+                              onchange="updateCitationCounter()"
                               style="cursor: text;"></textarea>
                 </div>
                 
