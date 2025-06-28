@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NoHallu - AI 할루시네이션 문헌 검증 도구</title>
     <style>
-        /* 반응형 기본 설정 */
         * {
             margin: 0;
             padding: 0;
@@ -104,7 +103,6 @@
             content: "🔍";
         }
         
-        /* 5개 제한 알림 박스 */
         .limit-notice {
             background: linear-gradient(135deg, #fef3c7, #fbbf24);
             border: 2px solid #f59e0b;
@@ -461,7 +459,6 @@
             margin-bottom: 0.25rem;
         }
         
-        /* 반응형 미디어 쿼리 */
         @media (min-width: 1200px) {
             .container {
                 padding: 2rem;
@@ -532,7 +529,6 @@
             <div class="input-section">
                 <h2 class="section-title">문헌 검증 입력</h2>
                 
-                <!-- 5개 제한 알림 -->
                 <div class="limit-notice">
                     <div class="limit-notice-title">서버 성능 제한 알림</div>
                     <div class="limit-notice-text">
@@ -549,19 +545,21 @@
                     <label for="citations">참고문헌 또는 인용문 입력:</label>
                     <textarea id="citations" 
                               name="citations"
-                              placeholder="학생이 제출한 참고문헌을 여기에 붙여넣으세요. (최대 5개)&#10;&#10;한국어 예시:&#10;김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.&#10;&#10;English Example:&#10;Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67."
-                              oninput="updateCitationCounter()"
-                              onkeyup="updateCitationCounter()"
-                              onchange="updateCitationCounter()"
-                              style="cursor: text;"></textarea>
+                              placeholder="학생이 제출한 참고문헌을 여기에 붙여넣으세요. (최대 5개)
+
+한국어 예시:
+김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.
+
+English Example:
+Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67."></textarea>
                 </div>
                 
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="verifyBtn" onclick="verifyCitations()">
+                    <button class="btn btn-primary" id="verifyBtn">
                         <span class="loading-spinner"></span>
                         <span id="verifyBtnText">문헌 검증하기</span>
                     </button>
-                    <button class="btn btn-secondary" onclick="clearAll()">초기화</button>
+                    <button class="btn btn-secondary" id="clearBtn">초기화</button>
                 </div>
                 
                 <div class="api-info">
@@ -615,66 +613,46 @@
     </div>
 
     <script>
+        console.log('=== NoHallu JavaScript 시작 ===');
+        
         // 전역 변수
         let verificationResults = [];
         let isVerifying = false;
         
-        console.log('NoHallu JavaScript 로드 시작');
-        
         // 문헌 개수 카운터 업데이트
         function updateCitationCounter() {
-            console.log('updateCitationCounter 함수 호출됨');
+            console.log('updateCitationCounter 호출됨');
             
-            try {
-                const citationsElement = document.getElementById('citations');
-                const counterElement = document.getElementById('citationCounter');
-                const verifyBtn = document.getElementById('verifyBtn');
-                
-                if (!citationsElement) {
-                    console.error('citations textarea를 찾을 수 없습니다');
-                    return;
-                }
-                
-                if (!counterElement) {
-                    console.error('citationCounter를 찾을 수 없습니다');
-                    return;
-                }
-                
-                if (!verifyBtn) {
-                    console.error('verifyBtn을 찾을 수 없습니다');
-                    return;
-                }
-                
-                const citationsText = citationsElement.value.trim();
-                console.log('입력된 텍스트 길이:', citationsText.length);
-                
-                const citations = citationsText ? citationsText.split(/\n+/)
-                    .map(c => c.trim())
-                    .filter(c => c.length > 10) : [];
-                
-                const count = citations.length;
-                console.log('문헌 개수:', count);
-                
-                counterElement.textContent = `입력된 문헌: ${count}개 / 5개`;
-                
-                // 5개 초과시 스타일 변경
-                if (count > 5) {
-                    counterElement.style.background = '#fef2f2';
-                    counterElement.style.color = '#dc2626';
-                    citationsElement.classList.add('textarea-warning');
-                    verifyBtn.disabled = true;
-                    counterElement.textContent = `⚠️ 입력된 문헌: ${count}개 (5개 초과!)`;
-                } else {
-                    counterElement.style.background = '#dbeafe';
-                    counterElement.style.color = '#1e40af';
-                    citationsElement.classList.remove('textarea-warning');
-                    verifyBtn.disabled = isVerifying;
-                }
-                
-                console.log('카운터 업데이트 완료');
-                
-            } catch (error) {
-                console.error('카운터 업데이트 오류:', error);
+            const citationsElement = document.getElementById('citations');
+            const counterElement = document.getElementById('citationCounter');
+            const verifyBtn = document.getElementById('verifyBtn');
+            
+            if (!citationsElement || !counterElement || !verifyBtn) {
+                console.error('필수 요소를 찾을 수 없습니다');
+                return;
+            }
+            
+            const citationsText = citationsElement.value.trim();
+            const citations = citationsText ? citationsText.split(/\n+/)
+                .map(c => c.trim())
+                .filter(c => c.length > 10) : [];
+            
+            const count = citations.length;
+            console.log('문헌 개수:', count);
+            
+            counterElement.textContent = `입력된 문헌: ${count}개 / 5개`;
+            
+            if (count > 5) {
+                counterElement.style.background = '#fef2f2';
+                counterElement.style.color = '#dc2626';
+                citationsElement.classList.add('textarea-warning');
+                verifyBtn.disabled = true;
+                counterElement.textContent = `⚠️ 입력된 문헌: ${count}개 (5개 초과!)`;
+            } else {
+                counterElement.style.background = '#dbeafe';
+                counterElement.style.color = '#1e40af';
+                citationsElement.classList.remove('textarea-warning');
+                verifyBtn.disabled = isVerifying;
             }
         }
         
@@ -696,7 +674,7 @@
         
         // 메인 검증 함수
         async function verifyCitations() {
-            console.log('verifyCitations 함수 호출됨');
+            console.log('verifyCitations 호출됨');
             
             const citationsText = document.getElementById('citations').value.trim();
             const resultsDiv = document.getElementById('results');
@@ -722,8 +700,6 @@
                 return;
             }
             
-            console.log('검증 시작, 문헌 개수:', citations.length);
-            
             // 로딩 상태 설정
             isVerifying = true;
             verifyBtn.disabled = true;
@@ -732,49 +708,21 @@
             resultsDiv.innerHTML = '<div class="loading">학술 데이터베이스에서 검색 중입니다</div>';
             
             try {
-                // 헬스체크 시도
-                console.log('API 헬스체크 시도...');
-                const healthResponse = await fetch('/api/health', { 
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-                
-                if (healthResponse.ok) {
-                    console.log('API 서버 연결 성공, 실제 검증 API 호출');
-                    
-                    const response = await fetch('/api/verify-citations', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ citations: citations })
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success) {
-                            verificationResults = data.results.map(result => ({
-                                citation: result.citation,
-                                verification: result
-                            }));
-                            displayResults();
-                            return;
-                        } else {
-                            throw new Error(data.error || '검증 API 오류');
-                        }
-                    } else {
-                        throw new Error(`API 응답 오류: ${response.status}`);
-                    }
-                } else {
-                    throw new Error('API 서버 연결 실패');
-                }
-                
-            } catch (error) {
-                console.log('API 연결 실패:', error.message);
-                console.log('시뮬레이션 모드로 전환');
-                
+                // 시뮬레이션 모드로 직접 실행 (API 서버 없이도 동작)
                 await simulateVerification(citations, resultsDiv);
+            } catch (error) {
+                console.error('검증 오류:', error);
+                resultsDiv.innerHTML = `
+                    <div class="result-item" style="border-color: #f87171;">
+                        <div class="citation-title">
+                            <span class="status error">오류</span>
+                            검증 중 오류가 발생했습니다
+                        </div>
+                        <div class="citation-details">
+                            ${error.message}
+                        </div>
+                    </div>
+                `;
             } finally {
                 // 로딩 상태 해제
                 isVerifying = false;
@@ -791,8 +739,8 @@
             
             resultsDiv.innerHTML = `
                 <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #92400e;">
-                    ⚠️ <strong>시뮬레이션 모드</strong><br>
-                    API 서버에 연결할 수 없어 데모 결과를 표시합니다.
+                    ⚠️ <strong>데모 모드</strong><br>
+                    실제 학술 데이터베이스 대신 시뮬레이션 결과를 표시합니다.
                 </div>
                 <div class="loading">검증 중입니다</div>
             `;
@@ -803,9 +751,10 @@
                 const citation = citations[i];
                 const parsed = parseCitation(citation);
                 
+                // 진행상황 표시
                 resultsDiv.innerHTML = `
                     <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #92400e;">
-                        ⚠️ <strong>시뮬레이션 모드</strong> - API 서버 연결 실패
+                        ⚠️ <strong>데모 모드</strong> - 시뮬레이션 결과
                     </div>
                     <div class="loading">검증 중입니다 (${i + 1}/${citations.length})</div>
                 `;
@@ -816,7 +765,7 @@
                     verification: result
                 });
                 
-                await new Promise(resolve => setTimeout(resolve, 800));
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
             
             displayResults();
@@ -827,327 +776,10 @@
             const isEnglish = citation.language === 'english';
             const similarity = Math.random();
             
-            if (citation.original.includes('AI') || citation.original.includes('인공지능')) {
-                if (similarity > 0.6) {
+            // AI 관련 키워드는 높은 확률로 검증됨
+            if (citation.original.includes('AI') || citation.original.includes('인공지능') || 
+                citation.original.includes('machine learning') || citation.original.includes('딥러닝')) {
+                if (similarity > 0.5) {
                     return {
                         status: 'verified',
-                        message: isEnglish ? 
-                            'Verified in academic databases (CrossRef, PubMed)' :
-                            'KCI 데이터베이스에서 확인되었습니다',
-                        confidence: Math.round(similarity * 100),
-                        databases: isEnglish ? ['CrossRef'] : ['KCI']
-                    };
-                }
-            }
-            
-            if (citation.original.includes('존재하지않는') || citation.original.includes('fake') || 
-                citation.original.includes('Non-existent')) {
-                return {
-                    status: 'not-found',
-                    message: isEnglish ?
-                        'Not found in any academic database. Likely AI hallucination.' :
-                        'KCI 데이터베이스에서 찾을 수 없습니다. AI 할루시네이션 의심',
-                    confidence: 95
-                };
-            }
-            
-            if (similarity > 0.7) {
-                return {
-                    status: 'verified',
-                    message: isEnglish ?
-                        'Verified in academic databases' :
-                        'KCI 데이터베이스에서 확인되었습니다',
-                    confidence: Math.round(similarity * 100),
-                    databases: isEnglish ? ['CrossRef', 'PubMed'] : ['KCI']
-                };
-            } else if (similarity > 0.4) {
-                return {
-                    status: 'similar',
-                    message: isEnglish ?
-                        'Similar publications found, but not exact match' :
-                        '유사한 문헌이 발견되었지만 정확한 일치는 아닙니다',
-                    confidence: Math.round(similarity * 100),
-                    databases: isEnglish ? ['arXiv'] : ['KCI']
-                };
-            } else {
-                return {
-                    status: 'not-found',
-                    message: isEnglish ?
-                        'Not found in academic databases. Possible AI hallucination.' :
-                        'KCI 데이터베이스에서 찾을 수 없습니다. AI 할루시네이션 의심',
-                    confidence: Math.round((1 - similarity) * 100)
-                };
-            }
-        }
-        
-        // 결과 표시 함수
-        function displayResults() {
-            console.log('displayResults 함수 호출됨');
-            
-            const resultsDiv = document.getElementById('results');
-            
-            if (verificationResults.length === 0) {
-                resultsDiv.innerHTML = '<p style="color: #64748b; text-align: center; padding: 40px;">검증할 문헌이 없습니다.</p>';
-                return;
-            }
-            
-            let html = '';
-            let verifiedCount = 0;
-            let suspiciousCount = 0;
-            
-            verificationResults.forEach((result, index) => {
-                const { citation, verification } = result;
-                let statusClass = '';
-                let statusText = '';
-                
-                switch (verification.status) {
-                    case 'verified':
-                        statusClass = 'verified';
-                        statusText = '검증됨';
-                        verifiedCount++;
-                        break;
-                    case 'similar':
-                        statusClass = 'similar';
-                        statusText = '유사문헌';
-                        break;
-                    case 'not-found':
-                        statusClass = 'not-found';
-                        statusText = '의심됨';
-                        suspiciousCount++;
-                        break;
-                    default:
-                        statusClass = 'error';
-                        statusText = '오류';
-                }
-                
-                html += `
-                    <div class="result-item">
-                        <div class="citation-title">
-                            <span class="status ${statusClass}">${statusText}</span>
-                            ${citation.title || citation.original}
-                            <span class="language-tag ${citation.language}">${citation.language === 'english' ? 'ENG' : 'KOR'}</span>
-                        </div>
-                        <div class="citation-details">
-                            <strong>원본:</strong> ${citation.original}<br>
-                            <strong>검증 결과:</strong> ${verification.message}
-                            ${verification.confidence ? `<br><strong>신뢰도:</strong> ${verification.confidence}%` : ''}
-                            ${verification.databases ? `<br><strong>검색 DB:</strong> ${verification.databases.join(', ')}` : ''}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            // 요약 정보 추가
-            const summary = `
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                    <h3 style="color: #1e40af; margin-bottom: 16px; font-weight: 600;">🔍 검증 요약</h3>
-                    <p><strong>총 문헌 수:</strong> ${verificationResults.length}개</p>
-                    <p><strong>한국어 문헌:</strong> ${verificationResults.filter(r => r.citation.language === 'korean').length}개</p>
-                    <p><strong>영어 문헌:</strong> ${verificationResults.filter(r => r.citation.language === 'english').length}개</p>
-                    <p><strong>검증된 문헌:</strong> ${verifiedCount}개</p>
-                    <p><strong>의심되는 문헌:</strong> ${suspiciousCount}개</p>
-                    ${suspiciousCount > 0 ? 
-                        `<p style="color: #dc2626; font-weight: 600; margin-top: 12px;">
-                            ⚠️ AI 할루시네이션 의심 문헌이 발견되었습니다.
-                        </p>` : 
-                        `<p style="color: #059669; font-weight: 600; margin-top: 12px;">
-                            ✅ 모든 문헌이 검증되었습니다.
-                        </p>`
-                    }
-                </div>
-            `;
-            
-            resultsDiv.innerHTML = summary + html;
-            console.log('결과 표시 완료');
-        }
-        
-        // 초기화 함수
-        function clearAll() {
-            console.log('clearAll 함수 호출됨');
-            
-            document.getElementById('citations').value = '';
-            document.getElementById('results').innerHTML = `
-                <p style="color: #64748b; text-align: center; padding: 40px;">
-                    참고문헌을 입력하고 검증 버튼을 클릭하세요.
-                </p>
-            `;
-            verificationResults = [];
-            updateCitationCounter();
-        }
-        
-        // 예시 데이터 입력 함수
-        function loadExampleData() {
-            console.log('loadExampleData 함수 호출됨');
-            
-            const textarea = document.getElementById('citations');
-            if (textarea) {
-                textarea.value = `김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.
-Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67.
-이영희 (2022). 디지털 네이티브 세대의 학습패턴 분석. 한국교육심리학회지, 36(3), 67-89.
-박민수 (2023). 가상현실 환경에서의 몰입형 학습 효과. 존재하지않는학회지, 99(1), 1-20.
-Johnson, M. (2021). Fake paper about blockchain education. Non-existent Journal, 1(1), 1-10.`;
-                updateCitationCounter();
-                console.log('예시 데이터 입력 완료');
-            } else {
-                console.error('Textarea를 찾을 수 없습니다');
-            }
-        }
-        
-        // DOM 로드 완료 후 실행
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOMContentLoaded 이벤트 발생');
-            
-            // 요소들이 존재하는지 확인
-            const textarea = document.getElementById('citations');
-            const counter = document.getElementById('citationCounter');
-            const verifyBtn = document.getElementById('verifyBtn');
-            
-            console.log('Textarea 존재:', !!textarea);
-            console.log('Counter 존재:', !!counter);
-            console.log('VerifyBtn 존재:', !!verifyBtn);
-            
-            // 초기 카운터 업데이트
-            updateCitationCounter();
-            
-            // 예시 데이터 버튼 추가
-            const exampleBtn = document.createElement('button');
-            exampleBtn.textContent = '예시 데이터로 테스트';
-            exampleBtn.className = 'btn btn-secondary';
-            exampleBtn.style.marginTop = '16px';
-            exampleBtn.style.width = '100%';
-            exampleBtn.style.fontSize = '14px';
-            exampleBtn.onclick = loadExampleData;
-            
-            const exampleSection = document.querySelector('.example-citations');
-            if (exampleSection) {
-                exampleSection.appendChild(exampleBtn);
-                console.log('예시 데이터 버튼 추가 완료');
-            } else {
-                console.error('Example citations 섹션을 찾을 수 없습니다');
-            }
-            
-            console.log('NoHallu 초기화 완료');
-        });
-        
-        console.log('NoHallu JavaScript 로드 완료');
-    </script>';
-                        verifiedCount++;
-                        break;
-                    case 'similar':
-                        statusClass = 'similar';
-                        statusText = '유사문헌';
-                        break;
-                    case 'not-found':
-                        statusClass = 'not-found';
-                        statusText = '의심됨';
-                        suspiciousCount++;
-                        break;
-                    default:
-                        statusClass = 'error';
-                        statusText = '오류';
-                }
-                
-                html += `
-                    <div class="result-item">
-                        <div class="citation-title">
-                            <span class="status ${statusClass}">${statusText}</span>
-                            ${citation.title || citation.original}
-                            <span class="language-tag ${citation.language}">${citation.language === 'english' ? 'ENG' : 'KOR'}</span>
-                        </div>
-                        <div class="citation-details">
-                            <strong>원본:</strong> ${citation.original}<br>
-                            <strong>검증 결과:</strong> ${verification.message}
-                            ${verification.confidence ? `<br><strong>신뢰도:</strong> ${verification.confidence}%` : ''}
-                            ${verification.databases ? `<br><strong>검색 DB:</strong> ${verification.databases.join(', ')}` : ''}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            // 요약 정보 추가
-            const summary = `
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                    <h3 style="color: #1e40af; margin-bottom: 16px; font-weight: 600;">🔍 검증 요약</h3>
-                    <p><strong>총 문헌 수:</strong> ${verificationResults.length}개</p>
-                    <p><strong>한국어 문헌:</strong> ${verificationResults.filter(r => r.citation.language === 'korean').length}개</p>
-                    <p><strong>영어 문헌:</strong> ${verificationResults.filter(r => r.citation.language === 'english').length}개</p>
-                    <p><strong>검증된 문헌:</strong> ${verifiedCount}개</p>
-                    <p><strong>의심되는 문헌:</strong> ${suspiciousCount}개</p>
-                    ${suspiciousCount > 0 ? 
-                        `<p style="color: #dc2626; font-weight: 600; margin-top: 12px;">
-                            ⚠️ AI 할루시네이션 의심 문헌이 발견되었습니다.
-                        </p>` : 
-                        `<p style="color: #059669; font-weight: 600; margin-top: 12px;">
-                            ✅ 모든 문헌이 검증되었습니다.
-                        </p>`
-                    }
-                </div>
-            `;
-            
-            resultsDiv.innerHTML = summary + html;
-        }
-        
-        // 초기화 함수
-        function clearAll() {
-            document.getElementById('citations').value = '';
-            document.getElementById('results').innerHTML = `
-                <p style="color: #64748b; text-align: center; padding: 40px;">
-                    참고문헌을 입력하고 검증 버튼을 클릭하세요.
-                </p>
-            `;
-            verificationResults = [];
-            updateCitationCounter();
-        }
-        
-        // 페이지 로드 시 초기화 (강화된 버전)
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('NoHallu 페이지 로드 완료');
-            
-            // 초기 카운터 업데이트
-            updateCitationCounter();
-            
-            // textarea 활성화 확인
-            const textarea = document.getElementById('citations');
-            if (textarea) {
-                console.log('Textarea 찾음:', textarea);
-                textarea.addEventListener('focus', function() {
-                    console.log('Textarea 포커스됨');
-                });
-                textarea.addEventListener('input', function() {
-                    console.log('Textarea 입력됨:', this.value.length);
-                });
-            } else {
-                console.error('Textarea를 찾을 수 없습니다!');
-            }
-            
-            // 예시 데이터로 테스트할 수 있도록 버튼 추가
-            const exampleBtn = document.createElement('button');
-            exampleBtn.textContent = '예시 데이터로 테스트';
-            exampleBtn.className = 'btn btn-secondary';
-            exampleBtn.style.marginTop = '16px';
-            exampleBtn.style.width = '100%';
-            exampleBtn.style.fontSize = '14px';
-            exampleBtn.onclick = function() {
-                console.log('예시 데이터 버튼 클릭됨');
-                const citationsTextarea = document.getElementById('citations');
-                if (citationsTextarea) {
-                    citationsTextarea.value = `김철수 (2023). 인공지능과 교육의 미래. 교육학연구, 45(2), 123-145.
-Smith, J. (2023). Machine learning in education. Journal of Educational Technology, 15(3), 45-67.
-이영희 (2022). 디지털 네이티브 세대의 학습패턴 분석. 한국교육심리학회지, 36(3), 67-89.
-Brown, A. (2022). AI hallucination detection. Nature Machine Intelligence. DOI: 10.1038/s41467-022-12345-6
-박민수 (2023). 가상현실 환경에서의 몰입형 학습 효과. 존재하지않는학회지, 99(1), 1-20.`;
-                    updateCitationCounter();
-                    console.log('예시 데이터 입력 완료');
-                } else {
-                    console.error('Textarea를 찾을 수 없어서 예시 데이터를 입력할 수 없습니다');
-                }
-            };
-            
-            const exampleSection = document.querySelector('.example-citations');
-            if (exampleSection) {
-                exampleSection.appendChild(exampleBtn);
-            }
-        });
-    </script>
-</body>
-</html>
+                        message: isEnglish ?
